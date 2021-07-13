@@ -1,13 +1,14 @@
 const Account = require('./accounts-model')
+const db = require('../../data/db-config')
 
 exports.checkAccountPayload = (req, res, next) => {
-    const err = { status: 400}
+    const err = { status: 400 }
     const { name, budget } = req.body;
     if( name === undefined || budget === undefined){
         err.message = "name and budget are required"
         next(err)
     }
-    else if (typeof name !== string) {
+    else if (typeof name !== "string") {
         err.message = 'name of account must be a string'
         next(err)
     }
@@ -32,8 +33,21 @@ exports.checkAccountPayload = (req, res, next) => {
     }
 }
 
-exports.checkAccountNameUnique = (req, res, next) => {
-next()
+exports.checkAccountNameUnique = async (req, res, next) => {
+try{
+    const existing = await db('accounts').where('name', req.body.name.trim()).first()
+
+    if(existing){
+        next({status: 400, message:'that name is taken'})
+    }
+    else{
+        next()
+    }
+
+}
+catch(err){
+    next(err)
+}
 }
 
 exports.checkAccountId = async (req, res, next) => {
@@ -42,7 +56,7 @@ exports.checkAccountId = async (req, res, next) => {
         if(!account){
             next({
                 status: 404,
-                message: 'Account not found'
+                message: 'account not found'
             })
         }
         else{
